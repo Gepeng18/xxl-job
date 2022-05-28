@@ -92,7 +92,7 @@ public class XxlJobExecutor {
 		TriggerCallbackThread.getInstance().start();
 
 		// init executor-server
-		// 初始化netty服务
+		// 启动netty服务，并注册至admin
 		initEmbedServer(address, ip, port, appname, accessToken);
 	}
 
@@ -130,7 +130,7 @@ public class XxlJobExecutor {
 	// ---------------------- admin-client (rpc invoker) ----------------------
 	private static List<AdminBiz> adminBizList;
 
-	//当存在多个任务调度中心时，创建多个AdminBizClient(adminAddress)
+	// 当存在多个任务调度中心时，创建多个AdminBizClient(adminAddress)
 	private void initAdminBizList(String adminAddresses, String accessToken) throws Exception {
 		if (adminAddresses != null && adminAddresses.trim().length() > 0) {
 			for (String address : adminAddresses.trim().split(",")) {

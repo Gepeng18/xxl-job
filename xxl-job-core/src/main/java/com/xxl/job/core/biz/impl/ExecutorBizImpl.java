@@ -44,23 +44,24 @@ public class ExecutorBizImpl implements ExecutorBiz {
 	}
 
 	/**
+	 * 该方法被调用的最开始的起点是 EmbedHttpServerHandler
 	 * 1. 绑定作业到具体线程，启动线程
 	 * 2. 任务丢入线程处理
 	 */
 	@Override
 	public ReturnT<String> run(TriggerParam triggerParam) {
 		// load old：jobHandler + jobThread
-		// 获得执行控制器
+		// 获得执行控制器 （从jobThreadRepository中拿）
 		JobThread jobThread = XxlJobExecutor.loadJobThread(triggerParam.getJobId());
 		IJobHandler jobHandler = jobThread != null ? jobThread.getHandler() : null;
 		String removeOldReason = null;
 
 		// valid：jobHandler + jobThread
 		GlueTypeEnum glueTypeEnum = GlueTypeEnum.match(triggerParam.getGlueType());
-        // bean模式触发
+        // do bean模式触发
 		if (GlueTypeEnum.BEAN == glueTypeEnum) {
 
-			// new jobhandler
+			// new jobhandler （从jobHandlerRepository中拿）
 			IJobHandler newJobHandler = XxlJobExecutor.loadJobHandler(triggerParam.getExecutorHandler());
 
 			// valid old jobThread
@@ -154,7 +155,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
 			jobThread = XxlJobExecutor.registJobThread(triggerParam.getJobId(), jobHandler, removeOldReason);
 		}
 
-		// push data to queue
+		// do push data to queue
         // 将数据放入执行队列
 		// 作业没绑定过线程,则绑定作业到具体线程,并且启动
 		ReturnT<String> pushResult = jobThread.pushTriggerQueue(triggerParam);

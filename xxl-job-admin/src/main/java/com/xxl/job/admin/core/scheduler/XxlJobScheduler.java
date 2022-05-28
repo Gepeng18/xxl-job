@@ -30,6 +30,7 @@ public class XxlJobScheduler  {
 
         // admin registry monitor run
         // 30秒执行一次,维护注册表信息， 判断在线超时时间90s
+        // （从jobRegistry注册表中删除超时的机器，将jobRegistry数据写回group中）
         JobRegistryHelper.getInstance().start();
 
         // admin fail-monitor run
@@ -41,7 +42,7 @@ public class XxlJobScheduler  {
         JobCompleteHelper.getInstance().start();
 
         // admin log report start
-        // 统计一些失败成功报表,删除过期日志
+        // 统计一些失败成功报表（按天进行统计）,删除过期日志
         JobLogReportHelper.getInstance().start();
 
         // start-schedule  ( depend on JobTriggerPoolHelper )

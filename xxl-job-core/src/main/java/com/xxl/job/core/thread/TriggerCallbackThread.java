@@ -49,6 +49,9 @@ public class TriggerCallbackThread {
 	private Thread triggerRetryCallbackThread;
 	private volatile boolean toStop = false;
 
+	/**
+	 * 不停的從callBackQueue中拿出任务，然后
+	 */
 	public void start() {
 
 		// valid
@@ -187,6 +190,7 @@ public class TriggerCallbackThread {
 				callbackLog(callbackParamList, "<br>----------- xxl-job job callback error, errorMsg:" + e.getMessage());
 			}
 		}
+		// 将任务执行结果写会admin时，失败，则调用以下方法
 		if (!callbackRet) {
 			appendFailCallbackFile(callbackParamList);
 		}
@@ -198,12 +202,14 @@ public class TriggerCallbackThread {
 	private void callbackLog(List<HandleCallbackParam> callbackParamList, String logContent) {
 		for (HandleCallbackParam callbackParam : callbackParamList) {
 			String logFileName = XxlJobFileAppender.makeLogFileName(new Date(callbackParam.getLogDateTim()), callbackParam.getLogId());
+			// 将数据放到threadLocal中
 			XxlJobContext.setXxlJobContext(new XxlJobContext(
 					-1,
 					null,
 					logFileName,
 					-1,
 					-1));
+			// 写入文件
 			XxlJobHelper.log(logContent);
 		}
 	}
@@ -214,6 +220,7 @@ public class TriggerCallbackThread {
 	private static String failCallbackFilePath = XxlJobFileAppender.getLogPath().concat(File.separator).concat("callbacklog").concat(File.separator);
 	private static String failCallbackFileName = failCallbackFilePath.concat("xxl-job-callback-{x}").concat(".log");
 
+	// 将回调失败的写入日志
 	private void appendFailCallbackFile(List<HandleCallbackParam> callbackParamList) {
 		// valid
 		if (callbackParamList == null || callbackParamList.size() == 0) {

@@ -33,6 +33,11 @@ public class EmbedServer {
 	private ExecutorBiz executorBiz;
 	private Thread thread;
 
+	/**
+	 * 干了几件事
+	 * 1、启动了netty服务
+	 * 2、开始服务注册，将服务注册到xxl-job
+	 */
 	public void start(final String address, final int port, final String appname, final String accessToken) {
 		// 创建业务实例
 		executorBiz = new ExecutorBizImpl();
@@ -91,7 +96,7 @@ public class EmbedServer {
 					logger.info(">>>>>>>>>>> xxl-job remoting server start success, nettype = {}, port = {}", EmbedServer.class, port);
 
 					// start registry
-					// 开始服务注册，将服务注册到xxl-job
+					// 开始服务注册，将服务注册到xxl-job，就是发送注册和心跳请求（xxl-job中是一个请求）
 					startRegistry(appname, address);
 
 					// wait util stop

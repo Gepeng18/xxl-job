@@ -21,9 +21,10 @@ import java.util.concurrent.*;
  */
 public class JobCompleteHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobCompleteHelper.class);
-	
+
 	private static JobCompleteHelper instance = new JobCompleteHelper();
-	public static JobCompleteHelper getInstance(){
+
+	public static JobCompleteHelper getInstance() {
 		return instance;
 	}
 
@@ -32,7 +33,8 @@ public class JobCompleteHelper {
 	private ThreadPoolExecutor callbackThreadPool = null;
 	private Thread monitorThread;
 	private volatile boolean toStop = false;
-	public void start(){
+
+	public void start() {
 
 		// for callback
 		// 针对回调函数处理的线程池
@@ -76,20 +78,21 @@ public class JobCompleteHelper {
 				while (!toStop) {
 					try {
 						// 任务结果丢失处理：调度记录停留在 "运行中" 状态超过10min，且对应执行器心跳注册失败不在线，则将本地调度主动标记失败；
+						// 1、判断日志触发时间已经超过10分钟了 2、job_registry中没有该jobId了
 						Date losedTime = DateUtil.addMinutes(new Date(), -10);
-						List<Long> losedJobIds  = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().findLostJobIds(losedTime);
+						List<Long> losedJobIds = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().findLostJobIds(losedTime);
 
-						if (losedJobIds!=null && losedJobIds.size()>0) {
-							for (Long logId: losedJobIds) {
+						if (losedJobIds != null && losedJobIds.size() > 0) {
+							for (Long logId : losedJobIds) {
 
 								XxlJobLog jobLog = new XxlJobLog();
 								jobLog.setId(logId);
 
 								jobLog.setHandleTime(new Date());
 								jobLog.setHandleCode(ReturnT.FAIL_CODE);
-								jobLog.setHandleMsg( I18nUtil.getString("joblog_lost_fail") );
+								jobLog.setHandleMsg(I18nUtil.getString("joblog_lost_fail"));
 
-								//更改处理状态
+								//更改日志，并且若父任务正常结束，则触发子任务
 								XxlJobCompleter.updateHandleInfoAndFinish(jobLog);
 							}
 
@@ -100,15 +103,15 @@ public class JobCompleteHelper {
 						}
 					}
 
-                    try {
-                        TimeUnit.SECONDS.sleep(60);
-                    } catch (Exception e) {
-                        if (!toStop) {
-                            logger.error(e.getMessage(), e);
-                        }
-                    }
+					try {
+						TimeUnit.SECONDS.sleep(60);
+					} catch (Exception e) {
+						if (!toStop) {
+							logger.error(e.getMessage(), e);
+						}
+					}
 
-                }
+				}
 
 				logger.info(">>>>>>>>>>> xxl-job, JobLosedMonitorHelper stop");
 
@@ -119,7 +122,7 @@ public class JobCompleteHelper {
 		monitorThread.start();
 	}
 
-	public void toStop(){
+	public void toStop() {
 		toStop = true;
 
 		// stop registryOrRemoveThreadPool
@@ -142,10 +145,10 @@ public class JobCompleteHelper {
 		callbackThreadPool.execute(new Runnable() {
 			@Override
 			public void run() {
-				for (HandleCallbackParam handleCallbackParam: callbackParamList) {
+				for (HandleCallbackParam handleCallbackParam : callbackParamList) {
 					ReturnT<String> callbackResult = callback(handleCallbackParam);
 					logger.debug(">>>>>>>>> JobApiController.callback {}, handleCallbackParam={}, callbackResult={}",
-							(callbackResult.getCode()== ReturnT.SUCCESS_CODE?"success":"fail"), handleCallbackParam, callbackResult);
+							(callbackResult.getCode() == ReturnT.SUCCESS_CODE ? "success" : "fail"), handleCallbackParam, callbackResult);
 				}
 			}
 		});
@@ -168,7 +171,7 @@ public class JobCompleteHelper {
 
 		// handle msg
 		StringBuffer handleMsg = new StringBuffer();
-		if (log.getHandleMsg()!=null) {
+		if (log.getHandleMsg() != null) {
 			handleMsg.append(log.getHandleMsg()).append("<br>");
 		}
 		if (handleCallbackParam.getHandleMsg() != null) {
@@ -184,7 +187,6 @@ public class JobCompleteHelper {
 
 		return ReturnT.SUCCESS;
 	}
-
 
 
 }

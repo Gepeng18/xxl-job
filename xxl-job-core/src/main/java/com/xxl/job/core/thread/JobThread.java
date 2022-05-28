@@ -30,6 +30,7 @@ public class JobThread extends Thread {
 
 	private int jobId;
 	private IJobHandler handler;
+	// 存执行任务需要的信息的地方
 	private LinkedBlockingQueue<TriggerParam> triggerQueue;
 	private Set<Long> triggerLogIdSet;        // avoid repeat trigger for the same TRIGGER_LOG_ID
 
@@ -141,9 +142,9 @@ public class JobThread extends Thread {
 					// execute
 					XxlJobHelper.log("<br>----------- xxl-job job execute start -----------<br>----------- Param:" + xxlJobContext.getJobParam());
 
+					// 有设置执行时间的话通过FutureTask实现等待超时的动作
 					if (triggerParam.getExecutorTimeout() > 0) {
 						// limit timeout
-						// 有设置执行时间的话通过FutureTask实现等待超时的动作
 						Thread futureThread = null;
 						try {
 							FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
@@ -245,6 +246,7 @@ public class JobThread extends Thread {
 			}
 		}
 
+		// client停止后
 		// callback trigger request in queue
 		// 将队列中的任务回调标记失败处理
 		while (triggerQueue != null && triggerQueue.size() > 0) {

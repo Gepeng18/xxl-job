@@ -92,7 +92,7 @@ public class XxlJobTrigger {
 			if (shardingParam == null) {
 				shardingParam = new int[]{0, 1};
 			}
-			// 其他执行策略
+			// do 其他执行策略
 			processTrigger(group, jobInfo, finalFailRetryCount, triggerType, shardingParam[0], shardingParam[1]);
 		}
 
@@ -113,12 +113,12 @@ public class XxlJobTrigger {
 	 * @param finalFailRetryCount
 	 * @param triggerType
 	 * @param index               sharding index
-	 * @param total               sharding index
+	 * @param total               sharding total
 	 */
 	private static void processTrigger(XxlJobGroup group, XxlJobInfo jobInfo, int finalFailRetryCount, TriggerTypeEnum triggerType, int index, int total) {
 
 		// param
-		//阻塞策略(先判断并行还是串行)
+		// 阻塞策略(先判断并行还是串行)
 		ExecutorBlockStrategyEnum blockStrategy = ExecutorBlockStrategyEnum.match(jobInfo.getExecutorBlockStrategy(), ExecutorBlockStrategyEnum.SERIAL_EXECUTION);  // block strategy
 		// 获取路由策略,默认first
 		ExecutorRouteStrategyEnum executorRouteStrategyEnum = ExecutorRouteStrategyEnum.match(jobInfo.getExecutorRouteStrategy(), null);    // route strategy
@@ -219,8 +219,8 @@ public class XxlJobTrigger {
 	/**
 	 * run executor
 	 *
-	 * @param triggerParam
-	 * @param address
+	 * @param triggerParam 调用的所有参数
+	 * @param address  client的地址
 	 * @return
 	 */
 	public static ReturnT<String> runExecutor(TriggerParam triggerParam, String address) {

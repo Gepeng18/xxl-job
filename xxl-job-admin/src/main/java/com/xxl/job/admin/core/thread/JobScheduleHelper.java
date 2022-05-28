@@ -81,16 +81,17 @@ public class JobScheduleHelper {
 
 						// tx start
 
-						// 1、pre read
 						long nowTime = System.currentTimeMillis();
-						// 查询 当前时间 + 5000 毫秒，就是接下来 5 秒要执行到任务
+						// 1、查询 当前时间 + 5000 毫秒，就是接下来 5 秒 《之前》 要执行的所有任务
 						List<XxlJobInfo> scheduleList = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().scheduleJobQuery(nowTime + PRE_READ_MS, preReadCount);
 						if (scheduleList != null && scheduleList.size() > 0) {
 							// 2、push time-ring
 							for (XxlJobInfo jobInfo : scheduleList) {
 
 								// time-ring jump
-								// 如果当前时间大于要接下来执行到时间 + 5 秒
+								// |----任务在这里----|---------------------|-------------------------|
+								// ---------------now-5s------------------now---------------------now+5s
+								// if jobInfo.getTriggerNextTime() < nowTime - 5s
 								if (nowTime > jobInfo.getTriggerNextTime() + PRE_READ_MS) {
 									// 2.1、trigger-expire > 5s：pass && make next-trigger-time
 									logger.warn(">>>>>>>>>>> xxl-job, schedule misfire, jobId = " + jobInfo.getId());
@@ -112,6 +113,8 @@ public class JobScheduleHelper {
 									refreshNextValidTime(jobInfo, new Date());
 
 								} else if (nowTime > jobInfo.getTriggerNextTime()) {
+									// |---------------|------任务在这里--------|-------------------------|
+									// ---------------now-5s------------------now---------------------now+5s
 									// 2.2、trigger-expire < 5s：direct-trigger && make next-trigger-time
 
 									// 1、trigger
@@ -124,6 +127,8 @@ public class JobScheduleHelper {
 									refreshNextValidTime(jobInfo, new Date());
 
 									// next-trigger-time in 5s, pre-read again
+									// |---------------|----------------------|---------任务在这里----------|
+									// ---------------now-5s------------------now---------------------now+5s
 									if (jobInfo.getTriggerStatus() == 1 && nowTime + PRE_READ_MS > jobInfo.getTriggerNextTime()) {
 
 										// 1、make ring second
@@ -140,6 +145,8 @@ public class JobScheduleHelper {
 									}
 
 								} else {
+									// |---------------|----------------------|---------任务在这里----------|
+									// ---------------now-5s------------------now---------------------now+5s
 									// 2.3、trigger-pre-read：time-ring trigger && make next-trigger-time
 
 									// 1、make ring second
@@ -259,7 +266,7 @@ public class JobScheduleHelper {
                         // 时间轮数据处理
 						List<Integer> ringItemData = new ArrayList<>();
 						int nowSecond = Calendar.getInstance().get(Calendar.SECOND);   // 避免处理耗时太长，跨过刻度，向前校验一个刻度；
-						// 获取最近1秒和 2秒要执行到任务
+						// 获取前1秒和2秒要执行到任务
 						for (int i = 0; i < 2; i++) {
 							List<Integer> tmpData = ringData.remove((nowSecond + 60 - i) % 60);
 							if (tmpData != null) {
@@ -307,7 +314,7 @@ public class JobScheduleHelper {
 		}
 	}
 
-	// ringSecond 下一次执行的时间
+	// ringSecond 下一次执行的时间 % 60
 	private void pushTimeRing(int ringSecond, int jobId) {
 		// push async ring
 		List<Integer> ringItemData = ringData.get(ringSecond);
