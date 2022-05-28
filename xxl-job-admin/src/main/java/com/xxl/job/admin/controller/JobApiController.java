@@ -59,6 +59,7 @@ public class JobApiController {
         // services mapping
         // 根据请求uri解析参数并调度
         if ("callback".equals(uri)) {
+            // client端执行完后，会回调
             List<HandleCallbackParam> callbackParamList = GsonTool.fromJson(data, List.class, HandleCallbackParam.class);
             return adminBiz.callback(callbackParamList);
         } else if ("registry".equals(uri)) {

@@ -224,6 +224,7 @@ public class JobThread extends Thread {
 					// callback handler info
 					if (!toStop) {
 						// commonm
+						// 放入回调队列，执行完成后，向Server报备
 						TriggerCallbackThread.pushCallBack(new HandleCallbackParam(
 								triggerParam.getLogId(),
 								triggerParam.getLogDateTime(),
@@ -231,6 +232,7 @@ public class JobThread extends Thread {
 								XxlJobContext.getXxlJobContext().getHandleMsg())
 						);
 					} else {
+						// 放入回调队列
 						// is killed
 						TriggerCallbackThread.pushCallBack(new HandleCallbackParam(
 								triggerParam.getLogId(),

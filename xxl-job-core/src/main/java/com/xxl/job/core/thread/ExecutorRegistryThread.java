@@ -31,11 +31,12 @@ public class ExecutorRegistryThread {
      */
 	public void start(final String appname, final String address) {
 
-		// valid
+		// valid，appname不允许为null
 		if (appname == null || appname.trim().length() == 0) {
 			logger.warn(">>>>>>>>>>> xxl-job, executor registry config fail, appname is null.");
 			return;
 		}
+		// 服务端地址不能为null
 		if (XxlJobExecutor.getAdminBizList() == null) {
 			logger.warn(">>>>>>>>>>> xxl-job, executor registry config fail, adminAddresses is null.");
 			return;
@@ -53,7 +54,9 @@ public class ExecutorRegistryThread {
 						for (AdminBiz adminBiz : XxlJobExecutor.getAdminBizList()) {
 							try {
 								// 服务注册/心跳
+								// 向server注册服务(http请求),注册内容appname,当前服务监听地址
 								ReturnT<String> registryResult = adminBiz.registry(registryParam);
+								// 访问成功
 								if (registryResult != null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
 									registryResult = ReturnT.SUCCESS;
 									logger.debug(">>>>>>>>>>> xxl-job registry success, registryParam:{}, registryResult:{}", new Object[]{registryParam, registryResult});
@@ -86,6 +89,7 @@ public class ExecutorRegistryThread {
 					}
 				}
 
+				// 当服务停止后，代码就执行到这里了，然后删除注册
 				// registry remove
 				// 服务停止后以下代码服务下线通知
 				try {

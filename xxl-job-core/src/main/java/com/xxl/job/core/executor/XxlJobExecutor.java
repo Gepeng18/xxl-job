@@ -84,7 +84,7 @@ public class XxlJobExecutor {
 
 
 		// init JobLogFileCleanThread
-		// 初始化日志文件切割线程
+		// 初始化日志文件清理线程
 		JobLogFileCleanThread.getInstance().start(logRetentionDays);
 
 		// init TriggerCallbackThread
@@ -130,7 +130,7 @@ public class XxlJobExecutor {
 	// ---------------------- admin-client (rpc invoker) ----------------------
 	private static List<AdminBiz> adminBizList;
 
-	//当存在多个任务调度中心时，创建代理类并注册，在NetComClientProxy
+	//当存在多个任务调度中心时，创建多个AdminBizClient(adminAddress)
 	private void initAdminBizList(String adminAddresses, String accessToken) throws Exception {
 		if (adminAddresses != null && adminAddresses.trim().length() > 0) {
 			for (String address : adminAddresses.trim().split(",")) {
@@ -141,6 +141,7 @@ public class XxlJobExecutor {
 					if (adminBizList == null) {
 						adminBizList = new ArrayList<AdminBiz>();
 					}
+					// 将admin地址以及token添加adminBiz中
 					adminBizList.add(adminBiz);
 				}
 			}
@@ -154,6 +155,11 @@ public class XxlJobExecutor {
 	// ---------------------- executor-server (rpc provider) ----------------------
 	private EmbedServer embedServer = null;
 
+	/**
+	 * 1. 使用netty开放端口，等待服务端调用
+	 * 2. 注册到服务端(心跳30S)
+	 * 3. 向服务端申请剔除服务
+	 */
 	private void initEmbedServer(String address, String ip, int port, String appname, String accessToken) throws Exception {
 
 		// fill ip port
@@ -175,7 +181,7 @@ public class XxlJobExecutor {
 		}
 
 		// start
-        // 创建server实例并启动
+        // 创建server实例并启动,启动嵌入服务器 ,向服务端注册,以及监听端口,主要服务服务端调用。
 		embedServer = new EmbedServer();
 		embedServer.start(address, port, appname, accessToken);
 	}
@@ -266,9 +272,10 @@ public class XxlJobExecutor {
 		JobThread newJobThread = new JobThread(jobId, handler);
 		newJobThread.start();
 		logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});
-
+		// 存储jobId与绑定工作的线程
 		JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);    // putIfAbsent | oh my god, map's put method return the old value!!!
 		if (oldJobThread != null) {
+			// 中断并删除旧线程
 			oldJobThread.toStop(removeOldReason);
 			oldJobThread.interrupt();
 		}

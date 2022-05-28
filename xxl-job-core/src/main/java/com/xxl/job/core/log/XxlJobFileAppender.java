@@ -10,6 +10,7 @@ import java.util.Date;
 
 /**
  * store trigger log in each log-file
+ *
  * @author xuxueli 2016-3-12 19:25:12
  */
 public class XxlJobFileAppender {
@@ -17,25 +18,29 @@ public class XxlJobFileAppender {
 
 	/**
 	 * log base path
-	 *
+	 * <p>
 	 * strut like:
-	 * 	---/
-	 * 	---/gluesource/
-	 * 	---/gluesource/10_1514171108000.js
-	 * 	---/gluesource/10_1514171108000.js
-	 * 	---/2017-12-25/
-	 * 	---/2017-12-25/639.log
-	 * 	---/2017-12-25/821.log
-	 *
+	 * ---/
+	 * ---/gluesource/
+	 * ---/gluesource/10_1514171108000.js
+	 * ---/gluesource/10_1514171108000.js
+	 * ---/2017-12-25/
+	 * ---/2017-12-25/639.log
+	 * ---/2017-12-25/821.log
 	 */
 	private static String logBasePath = "/data/applogs/xxl-job/jobhandler";
 	private static String glueSrcPath = logBasePath.concat("/gluesource");
-	public static void initLogPath(String logPath){
+
+	/**
+	 * 创建两个文件夹
+	 * logBasePath 以及 glueSrcPath
+	 */
+	public static void initLogPath(String logPath) {
 		// init
-		if (logPath!=null && logPath.trim().length()>0) {
+		if (logPath != null && logPath.trim().length() > 0) {
 			logBasePath = logPath;
 		}
-		// mk base dir
+		// mk base dir 日志文件不存在则创建
 		File logPathDir = new File(logBasePath);
 		if (!logPathDir.exists()) {
 			logPathDir.mkdirs();
@@ -49,9 +54,11 @@ public class XxlJobFileAppender {
 		}
 		glueSrcPath = glueBaseDir.getPath();
 	}
+
 	public static String getLogPath() {
 		return logBasePath;
 	}
+
 	public static String getGlueSrcPath() {
 		return glueSrcPath;
 	}
@@ -66,7 +73,7 @@ public class XxlJobFileAppender {
 	public static String makeLogFileName(Date triggerDate, long logId) {
 
 		// filePath/yyyy-MM-dd
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");	// avoid concurrent problem, can not be static
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");    // avoid concurrent problem, can not be static
 		File logFilePath = new File(getLogPath(), sdf.format(triggerDate));
 		if (!logFilePath.exists()) {
 			logFilePath.mkdir();
@@ -89,7 +96,7 @@ public class XxlJobFileAppender {
 	public static void appendLog(String logFileName, String appendLog) {
 
 		// log file
-		if (logFileName==null || logFileName.trim().length()==0) {
+		if (logFileName == null || logFileName.trim().length() == 0) {
 			return;
 		}
 		File logFile = new File(logFileName);
@@ -108,7 +115,7 @@ public class XxlJobFileAppender {
 			appendLog = "";
 		}
 		appendLog += "\r\n";
-		
+
 		// append file content
 		FileOutputStream fos = null;
 		try {
@@ -126,7 +133,7 @@ public class XxlJobFileAppender {
 				}
 			}
 		}
-		
+
 	}
 
 	/**
@@ -135,16 +142,16 @@ public class XxlJobFileAppender {
 	 * @param logFileName
 	 * @return log content
 	 */
-	public static LogResult readLog(String logFileName, int fromLineNum){
+	public static LogResult readLog(String logFileName, int fromLineNum) {
 
 		// valid log file
-		if (logFileName==null || logFileName.trim().length()==0) {
-            return new LogResult(fromLineNum, 0, "readLog fail, logFile not found", true);
+		if (logFileName == null || logFileName.trim().length() == 0) {
+			return new LogResult(fromLineNum, 0, "readLog fail, logFile not found", true);
 		}
 		File logFile = new File(logFileName);
 
 		if (!logFile.exists()) {
-            return new LogResult(fromLineNum, 0, "readLog fail, logFile not exists", true);
+			return new LogResult(fromLineNum, 0, "readLog fail, logFile not exists", true);
 		}
 
 		// read file
@@ -156,8 +163,8 @@ public class XxlJobFileAppender {
 			reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), "utf-8"));
 			String line = null;
 
-			while ((line = reader.readLine())!=null) {
-				toLineNum = reader.getLineNumber();		// [from, to], start as 1
+			while ((line = reader.readLine()) != null) {
+				toLineNum = reader.getLineNumber();        // [from, to], start as 1
 				if (toLineNum >= fromLineNum) {
 					logContentBuffer.append(line).append("\n");
 				}
@@ -188,10 +195,11 @@ public class XxlJobFileAppender {
 
 	/**
 	 * read log data
+	 *
 	 * @param logFile
 	 * @return log line content
 	 */
-	public static String readLines(File logFile){
+	public static String readLines(File logFile) {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), "utf-8"));

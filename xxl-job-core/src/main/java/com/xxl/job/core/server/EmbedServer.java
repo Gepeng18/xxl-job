@@ -34,16 +34,16 @@ public class EmbedServer {
 	private Thread thread;
 
 	public void start(final String address, final int port, final String appname, final String accessToken) {
-        // 创建业务实例
-        executorBiz = new ExecutorBizImpl();
+		// 创建业务实例
+		executorBiz = new ExecutorBizImpl();
 		thread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				// param
-                // 用于接受ServerSocketChannel的io请求，再把请求具体执行的回调函数转交给worker group执行
+				// 用于接受ServerSocketChannel的io请求，再把请求具体执行的回调函数转交给worker group执行
 				EventLoopGroup bossGroup = new NioEventLoopGroup();
 				EventLoopGroup workerGroup = new NioEventLoopGroup();
-                // 创建业务消费线程
+				// 创建业务消费线程
 				ThreadPoolExecutor bizThreadPool = new ThreadPoolExecutor(
 						0,
 						200,
@@ -64,7 +64,7 @@ public class EmbedServer {
 						});
 				try {
 					// start server
-                    // 启动netty服务
+					// 启动netty服务
 					ServerBootstrap bootstrap = new ServerBootstrap();
 					bootstrap.group(bossGroup, workerGroup)
 							.channel(NioServerSocketChannel.class)
@@ -72,30 +72,30 @@ public class EmbedServer {
 								@Override
 								public void initChannel(SocketChannel channel) throws Exception {
 									channel.pipeline()
-                                            // 空闲检测
+											// 空闲检测
 											.addLast(new IdleStateHandler(0, 0, 30 * 3, TimeUnit.SECONDS))  // beat 3N, close if idle
-                                            // http编码处理类
-                                            .addLast(new HttpServerCodec())
-                                            // post请求参数解析器
+											// http编码处理类
+											.addLast(new HttpServerCodec())
+											// post请求参数解析器
 											.addLast(new HttpObjectAggregator(5 * 1024 * 1024))  // merge request & reponse to FULL
-                                            // 自定义业务handler
+											// 自定义业务handler
 											.addLast(new EmbedHttpServerHandler(executorBiz, accessToken, bizThreadPool));
 								}
 							})
 							.childOption(ChannelOption.SO_KEEPALIVE, true);
 
 					// bind
-                    // 将端口号绑定到netty服务上
+					// 将端口号绑定到netty服务上
 					ChannelFuture future = bootstrap.bind(port).sync();
 
 					logger.info(">>>>>>>>>>> xxl-job remoting server start success, nettype = {}, port = {}", EmbedServer.class, port);
 
 					// start registry
-                    // 开始服务注册，将服务注册到xxl-job
+					// 开始服务注册，将服务注册到xxl-job
 					startRegistry(appname, address);
 
 					// wait util stop
-                    // 同步阻塞线程
+					// 同步阻塞线程
 					future.channel().closeFuture().sync();
 
 				} catch (InterruptedException e) {
@@ -105,7 +105,7 @@ public class EmbedServer {
 				} finally {
 					// stop
 					try {
-                        // 执行到此处表示netty服务停止，释放资源
+						// 执行到此处表示netty服务停止，释放资源
 						workerGroup.shutdownGracefully();
 						bossGroup.shutdownGracefully();
 					} catch (Exception e) {
@@ -114,9 +114,9 @@ public class EmbedServer {
 				}
 			}
 		});
-        // 设置守护线程，防止netty线程被回收
+		// 设置守护线程，防止netty线程被回收
 		thread.setDaemon(true);    // daemon, service jvm, user thread leave >>> daemon leave >>> jvm leave
-        // 启动线程
+		// 启动线程
 		thread.start();
 	}
 
@@ -160,9 +160,11 @@ public class EmbedServer {
 			//final byte[] requestBytes = ByteBufUtil.getBytes(msg.content());    // byteBuf.toString(io.netty.util.CharsetUtil.UTF_8);
 			// 消息解码
 			String requestData = msg.content().toString(CharsetUtil.UTF_8);
-			// 请求uri
+			// 请求uri，获取uri,后面通过uri来处理不同的请求
 			String uri = msg.uri();
+			// 获取请求方式,Post/Get
 			HttpMethod httpMethod = msg.method();
+			// 保持长连接
 			boolean keepAlive = HttpUtil.isKeepAlive(msg);
 			String accessTokenReq = msg.headers().get(XxlJobRemotingUtil.XXL_JOB_ACCESS_TOKEN);
 			// 业务线程执行处理

@@ -97,9 +97,12 @@ public class JobScheduleHelper {
 
 									// 1、misfire match
 									// 如果每次都有执行则立即触发执行
+									// 忽略:调度过期后,忽略过期的任务,从当前时间开始重新计算下次触发时间;
+									// 立即执行一次,调度过期后,立即地行一次,并1当前时间开始重新计算下次触发时间:
 									MisfireStrategyEnum misfireStrategyEnum = MisfireStrategyEnum.match(jobInfo.getMisfireStrategy(), MisfireStrategyEnum.DO_NOTHING);
 									if (MisfireStrategyEnum.FIRE_ONCE_NOW == misfireStrategyEnum) {
-										// FIRE_ONCE_NOW 》 trigger
+										// 若过期策略为FIRE ONCE NOW,则立即执行一次
+										// FIRE_ONCE_NOW 》 trigger 执行出发器
 										JobTriggerPoolHelper.trigger(jobInfo.getId(), TriggerTypeEnum.MISFIRE, -1, null, null, null);
 										logger.debug(">>>>>>>>>>> xxl-job, schedule push trigger : jobId = " + jobInfo.getId());
 									}
@@ -378,13 +381,18 @@ public class JobScheduleHelper {
 
 	// ---------------------- tools ----------------------
 	public static Date generateNextValidTime(XxlJobInfo jobInfo, Date fromTime) throws Exception {
+		//匹配调度类型
 		ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.match(jobInfo.getScheduleType(), null);
 		if (ScheduleTypeEnum.CRON == scheduleTypeEnum) {
+			//通过CRON，触发任务调度；
+			//通过cron表达式,获取下一次执行时间
 			Date nextValidTime = new CronExpression(jobInfo.getScheduleConf()).getNextValidTimeAfter(fromTime);
 			return nextValidTime;
 		} else if (ScheduleTypeEnum.FIX_RATE == scheduleTypeEnum /*|| ScheduleTypeEnum.FIX_DELAY == scheduleTypeEnum*/) {
-			return new Date(fromTime.getTime() + Integer.valueOf(jobInfo.getScheduleConf()) * 1000);
+			//以固定速度，触发任务调度；按照固定的间隔时间，周期性触发；
+			return new Date(fromTime.getTime() + Integer.valueOf(jobInfo.getScheduleConf())*1000 );
 		}
+		//没有匹配到调度类型,则null
 		return null;
 	}
 

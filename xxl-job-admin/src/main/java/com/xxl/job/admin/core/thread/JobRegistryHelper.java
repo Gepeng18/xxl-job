@@ -15,13 +15,15 @@ import java.util.concurrent.*;
 
 /**
  * job registry instance
+ *
  * @author xuxueli 2016-10-02 19:10:24
  */
 public class JobRegistryHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobRegistryHelper.class);
 
 	private static JobRegistryHelper instance = new JobRegistryHelper();
-	public static JobRegistryHelper getInstance(){
+
+	public static JobRegistryHelper getInstance() {
 		return instance;
 	}
 
@@ -29,7 +31,7 @@ public class JobRegistryHelper {
 	private Thread registryMonitorThread;
 	private volatile boolean toStop = false;
 
-	public void start(){
+	public void start() {
 
 		// for registry or remove
 		// 初始化注册或者删除线程池,主要负责客户端注册或者销毁到xxl_job_registry表
@@ -66,12 +68,12 @@ public class JobRegistryHelper {
 					try {
 						// auto registry group
 						List<XxlJobGroup> groupList = XxlJobAdminConfig.getAdminConfig().getXxlJobGroupDao().findByAddressType(0);
-						if (groupList!=null && !groupList.isEmpty()) {
+						if (groupList != null && !groupList.isEmpty()) {
 
 							// remove dead address (admin/executor)
 							// 从注册表中删除超时的机器
 							List<Integer> ids = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().findDead(RegistryConfig.DEAD_TIMEOUT, new Date());
-							if (ids!=null && ids.size()>0) {
+							if (ids != null && ids.size() > 0) {
 								XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().removeDead(ids);
 							}
 
@@ -80,7 +82,7 @@ public class JobRegistryHelper {
 							HashMap<String, List<String>> appAddressMap = new HashMap<String, List<String>>();
 							List<XxlJobRegistry> list = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().findAll(RegistryConfig.DEAD_TIMEOUT, new Date());
 							if (list != null) {
-								for (XxlJobRegistry item: list) {
+								for (XxlJobRegistry item : list) {
 									// 将注册类型为EXECUTOR的XxlJobRegistry集合改装成appname：触发器的ip地址
 									if (RegistryConfig.RegistType.EXECUTOR.name().equals(item.getRegistryGroup())) {
 										String appname = item.getRegistryKey();
@@ -99,18 +101,18 @@ public class JobRegistryHelper {
 
 							// fresh group address
 							// 更新xxl_job_group执行器地址列表
-							for (XxlJobGroup group: groupList) {
+							for (XxlJobGroup group : groupList) {
 								List<String> registryList = appAddressMap.get(group.getAppname());
 								// 将所有配置触发器的ip地址，使用,拼接
 								String addressListStr = null;
-								if (registryList!=null && !registryList.isEmpty()) {
+								if (registryList != null && !registryList.isEmpty()) {
 									Collections.sort(registryList);
 									StringBuilder addressListSB = new StringBuilder();
-									for (String item:registryList) {
+									for (String item : registryList) {
 										addressListSB.append(item).append(",");
 									}
 									addressListStr = addressListSB.toString();
-									addressListStr = addressListStr.substring(0, addressListStr.length()-1);
+									addressListStr = addressListStr.substring(0, addressListStr.length() - 1);
 								}
 								group.setAddressList(addressListStr);
 								group.setUpdateTime(new Date());
@@ -139,7 +141,7 @@ public class JobRegistryHelper {
 		registryMonitorThread.start();
 	}
 
-	public void toStop(){
+	public void toStop() {
 		toStop = true;
 
 		// stop registryOrRemoveThreadPool
@@ -215,7 +217,7 @@ public class JobRegistryHelper {
 		return ReturnT.SUCCESS;
 	}
 
-	private void freshGroupRegistryInfo(RegistryParam registryParam){
+	private void freshGroupRegistryInfo(RegistryParam registryParam) {
 		// Under consideration, prevent affecting core tables
 	}
 

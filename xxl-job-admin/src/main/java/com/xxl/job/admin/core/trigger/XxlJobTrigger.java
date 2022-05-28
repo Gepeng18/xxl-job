@@ -46,7 +46,7 @@ public class XxlJobTrigger {
 							   String addressList) {  // 可用执行器的地址，用逗号分割
 
 		// load data
-		// 获取任务信息
+		// 从JobInfo表中获取任务信息
 		XxlJobInfo jobInfo = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().loadById(jobId);
 		if (jobInfo == null) {
 			logger.warn(">>>>>>>>>>>> trigger fail, jobId invalid，jobId={}", jobId);
@@ -80,7 +80,7 @@ public class XxlJobTrigger {
 			}
 		}
 
-		// 如果是分片广播则特殊处理
+		// 如果是分片广播，同时注册地址不为空则特殊处理
 		if (ExecutorRouteStrategyEnum.SHARDING_BROADCAST == ExecutorRouteStrategyEnum.match(jobInfo.getExecutorRouteStrategy(), null)
 				&& group.getRegistryList() != null && !group.getRegistryList().isEmpty()
 				&& shardingParam == null) {
@@ -120,7 +120,7 @@ public class XxlJobTrigger {
 		// param
 		//阻塞策略(先判断并行还是串行)
 		ExecutorBlockStrategyEnum blockStrategy = ExecutorBlockStrategyEnum.match(jobInfo.getExecutorBlockStrategy(), ExecutorBlockStrategyEnum.SERIAL_EXECUTION);  // block strategy
-		//执行路由测试
+		// 获取路由策略,默认first
 		ExecutorRouteStrategyEnum executorRouteStrategyEnum = ExecutorRouteStrategyEnum.match(jobInfo.getExecutorRouteStrategy(), null);    // route strategy
 		// 分片广播参数
 		String shardingParam = (ExecutorRouteStrategyEnum.SHARDING_BROADCAST == executorRouteStrategyEnum) ? String.valueOf(index).concat("/").concat(String.valueOf(total)) : null;
@@ -226,6 +226,7 @@ public class XxlJobTrigger {
 	public static ReturnT<String> runExecutor(TriggerParam triggerParam, String address) {
 		ReturnT<String> runResult = null;
 		try {
+			// 获取业务执行器地址,就执行器地址后面拼接token
 			ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(address);
             // 这里是Server，Server调用的是 ExecutorBizClient.run()
             // client端执行的是 ExecutorBizImpl.run()
