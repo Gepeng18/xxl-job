@@ -35,6 +35,7 @@ public class JobCompleteHelper {
 	public void start(){
 
 		// for callback
+		// 针对回调函数处理的线程池
 		callbackThreadPool = new ThreadPoolExecutor(
 				2,
 				20,
@@ -88,6 +89,7 @@ public class JobCompleteHelper {
 								jobLog.setHandleCode(ReturnT.FAIL_CODE);
 								jobLog.setHandleMsg( I18nUtil.getString("joblog_lost_fail") );
 
+								//更改处理状态
 								XxlJobCompleter.updateHandleInfoAndFinish(jobLog);
 							}
 

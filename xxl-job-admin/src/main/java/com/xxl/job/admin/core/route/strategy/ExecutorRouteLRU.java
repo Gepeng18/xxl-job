@@ -15,16 +15,18 @@ import java.util.concurrent.ConcurrentMap;
  *      a、LFU(Least Frequently Used)：最不经常使用，频率/次数
  *      b(*)、LRU(Least Recently Used)：最近最久未使用，时间
  *
- * Created by xuxueli on 17/3/10.
+ * 维护了一个以任务id为单位的map，kv都是地址，实现原理是利用了LinkedHashMap存储排序的特性
+ * accessOrder：true=访问顺序排序（get/put时排序）；false=插入顺序排期；
  */
 public class ExecutorRouteLRU extends ExecutorRouter {
 
+    // key=jobId,value-key=address,value-value=address
     private static ConcurrentMap<Integer, LinkedHashMap<String, String>> jobLRUMap = new ConcurrentHashMap<Integer, LinkedHashMap<String, String>>();
     private static long CACHE_VALID_TIME = 0;
 
     public String route(int jobId, List<String> addressList) {
 
-        // cache clear
+        // 每24小时清除一次缓存
         if (System.currentTimeMillis() > CACHE_VALID_TIME) {
             jobLRUMap.clear();
             CACHE_VALID_TIME = System.currentTimeMillis() + 1000*60*60*24;
@@ -42,13 +44,13 @@ public class ExecutorRouteLRU extends ExecutorRouter {
             jobLRUMap.putIfAbsent(jobId, lruItem);
         }
 
-        // put new
+        // 初始化地址kv都是地址
         for (String address: addressList) {
             if (!lruItem.containsKey(address)) {
                 lruItem.put(address, address);
             }
         }
-        // remove old
+        // 移除无效的地址
         List<String> delKeys = new ArrayList<>();
         for (String existKey: lruItem.keySet()) {
             if (!addressList.contains(existKey)) {
@@ -61,7 +63,7 @@ public class ExecutorRouteLRU extends ExecutorRouter {
             }
         }
 
-        // load
+        // 直接拿到第一个即可
         String eldestKey = lruItem.entrySet().iterator().next().getKey();
         String eldestValue = lruItem.get(eldestKey);
         return eldestValue;

@@ -32,6 +32,8 @@ public class JobRegistryHelper {
 	public void start(){
 
 		// for registry or remove
+		// 初始化注册或者删除线程池,主要负责客户端注册或者销毁到xxl_job_registry表
+		// 该线程会与数据库交互,使用线程池主要是为了不阻塞调度线程
 		registryOrRemoveThreadPool = new ThreadPoolExecutor(
 				2,
 				10,
@@ -44,6 +46,7 @@ public class JobRegistryHelper {
 						return new Thread(r, "xxl-job, admin JobRegistryMonitorHelper-registryOrRemoveThreadPool-" + r.hashCode());
 					}
 				},
+				// 注意:这里的拒绝策略就是再次执行...^_^'''
 				new RejectedExecutionHandler() {
 					@Override
 					public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -53,6 +56,9 @@ public class JobRegistryHelper {
 				});
 
 		// for monitor
+		// 启动了一个守护的监听线程，用于监听服务心跳和绑定执行器。
+		//  30秒执行一次,维护注册表信息， 判断在线超时时间90s
+		// 其实就是从group表中读到所有的appName，然后从jobRegistry中读到所有的在线机器，然后组合起来，写会group表中
 		registryMonitorThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -63,16 +69,19 @@ public class JobRegistryHelper {
 						if (groupList!=null && !groupList.isEmpty()) {
 
 							// remove dead address (admin/executor)
+							// 从注册表中删除超时的机器
 							List<Integer> ids = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().findDead(RegistryConfig.DEAD_TIMEOUT, new Date());
 							if (ids!=null && ids.size()>0) {
 								XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().removeDead(ids);
 							}
 
 							// fresh online address (admin/executor)
+							// 获取所有在线机器, 存储注册表注册key和注册value
 							HashMap<String, List<String>> appAddressMap = new HashMap<String, List<String>>();
 							List<XxlJobRegistry> list = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().findAll(RegistryConfig.DEAD_TIMEOUT, new Date());
 							if (list != null) {
 								for (XxlJobRegistry item: list) {
+									// 将注册类型为EXECUTOR的XxlJobRegistry集合改装成appname：触发器的ip地址
 									if (RegistryConfig.RegistType.EXECUTOR.name().equals(item.getRegistryGroup())) {
 										String appname = item.getRegistryKey();
 										List<String> registryList = appAddressMap.get(appname);
@@ -89,8 +98,10 @@ public class JobRegistryHelper {
 							}
 
 							// fresh group address
+							// 更新xxl_job_group执行器地址列表
 							for (XxlJobGroup group: groupList) {
 								List<String> registryList = appAddressMap.get(group.getAppname());
+								// 将所有配置触发器的ip地址，使用,拼接
 								String addressListStr = null;
 								if (registryList!=null && !registryList.isEmpty()) {
 									Collections.sort(registryList);
@@ -149,6 +160,7 @@ public class JobRegistryHelper {
 	public ReturnT<String> registry(RegistryParam registryParam) {
 
 		// valid
+		// 参数校验
 		if (!StringUtils.hasText(registryParam.getRegistryGroup())
 				|| !StringUtils.hasText(registryParam.getRegistryKey())
 				|| !StringUtils.hasText(registryParam.getRegistryValue())) {
@@ -156,14 +168,18 @@ public class JobRegistryHelper {
 		}
 
 		// async execute
+		// 使用线程池执行
 		registryOrRemoveThreadPool.execute(new Runnable() {
 			@Override
 			public void run() {
+				// 更新注册表的心跳时间（根据group,key,value）
 				int ret = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().registryUpdate(registryParam.getRegistryGroup(), registryParam.getRegistryKey(), registryParam.getRegistryValue(), new Date());
 				if (ret < 1) {
+					// 更新失败说明不存在该数据，存入注册表
 					XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().registrySave(registryParam.getRegistryGroup(), registryParam.getRegistryKey(), registryParam.getRegistryValue(), new Date());
 
 					// fresh
+					// 刷新注册信息，暂时没用到，是个空方法
 					freshGroupRegistryInfo(registryParam);
 				}
 			}
@@ -172,6 +188,7 @@ public class JobRegistryHelper {
 		return ReturnT.SUCCESS;
 	}
 
+	// 移除注册机
 	public ReturnT<String> registryRemove(RegistryParam registryParam) {
 
 		// valid
@@ -185,9 +202,11 @@ public class JobRegistryHelper {
 		registryOrRemoveThreadPool.execute(new Runnable() {
 			@Override
 			public void run() {
+				// 移除注册表数据
 				int ret = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().registryDelete(registryParam.getRegistryGroup(), registryParam.getRegistryKey(), registryParam.getRegistryValue());
 				if (ret > 0) {
 					// fresh
+					// 刷新注册信息，暂时没用到，是个空方法
 					freshGroupRegistryInfo(registryParam);
 				}
 			}

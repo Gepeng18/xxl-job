@@ -16,6 +16,7 @@ import java.util.TreeMap;
  *      a、virtual node：解决不均衡问题
  *      b、hash method replace hashCode：String的hashCode可能重复，需要进一步扩大hashCode的取值范围
  * Created by xuxueli on 17/3/10.
+ * 为了保证任务能够均匀的分散在各个机器上，采用了一致性hash算法，并预设了100个虚拟节点，使地址能够尽量均匀分布
  */
 public class ExecutorRouteConsistentHash extends ExecutorRouter {
 
@@ -60,19 +61,26 @@ public class ExecutorRouteConsistentHash extends ExecutorRouter {
 
         // ------A1------A2-------A3------
         // -----------J1------------------
+        // 使用treemap使之有序
         TreeMap<Long, String> addressRing = new TreeMap<Long, String>();
+        // 遍历所有地址
         for (String address: addressList) {
+            // 生成100个虚拟节点
             for (int i = 0; i < VIRTUAL_NODE_NUM; i++) {
                 long addressHash = hash("SHARD-" + address + "-NODE-" + i);
                 addressRing.put(addressHash, address);
             }
         }
 
+        // hash节点位置
         long jobHash = hash(String.valueOf(jobId));
+        // 获取到在hash环中的位置
         SortedMap<Long, String> lastRing = addressRing.tailMap(jobHash);
         if (!lastRing.isEmpty()) {
+            // 如果不在hash环最后面则拿到下一个最近的节点
             return lastRing.get(lastRing.firstKey());
         }
+        // 如果在hash环最后的位置则取环中第一个节点
         return addressRing.firstEntry().getValue();
     }
 

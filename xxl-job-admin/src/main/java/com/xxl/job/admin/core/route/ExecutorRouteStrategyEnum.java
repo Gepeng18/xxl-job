@@ -24,7 +24,9 @@ public enum ExecutorRouteStrategyEnum {
         this.router = router;
     }
 
+    // 策略名
     private String title;
+    // executor抽象类
     private ExecutorRouter router;
 
     public String getTitle() {

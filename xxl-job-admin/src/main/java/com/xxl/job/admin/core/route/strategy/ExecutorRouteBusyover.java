@@ -12,10 +12,12 @@ import java.util.List;
 
 /**
  * Created by xuxueli on 17/3/10.
+ * 当机器的excutor处于忙碌的状态时，则转移至不忙碌的机器
+ *
+ * 实现原理就是通过调用机器的idleBeat接口查看机器的返回状态来判定是否忙碌，如果处于忙碌或不可用状态则循环下一个继续该步骤，直到找到空闲且可用的机器或者没有可用机器为止
  */
 public class ExecutorRouteBusyover extends ExecutorRouter {
 
-    @Override
     public ReturnT<String> route(TriggerParam triggerParam, List<String> addressList) {
         StringBuffer idleBeatResultSB = new StringBuffer();
         for (String address : addressList) {
@@ -23,6 +25,7 @@ public class ExecutorRouteBusyover extends ExecutorRouter {
             ReturnT<String> idleBeatResult = null;
             try {
                 ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(address);
+                // 调度接口查看是否忙碌
                 idleBeatResult = executorBiz.idleBeat(new IdleBeatParam(triggerParam.getJobId()));
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
@@ -34,14 +37,13 @@ public class ExecutorRouteBusyover extends ExecutorRouter {
                     .append("<br>code：").append(idleBeatResult.getCode())
                     .append("<br>msg：").append(idleBeatResult.getMsg());
 
-            // beat success
             if (idleBeatResult.getCode() == ReturnT.SUCCESS_CODE) {
                 idleBeatResult.setMsg(idleBeatResultSB.toString());
                 idleBeatResult.setContent(address);
                 return idleBeatResult;
             }
         }
-
+        // 没有可用的存活且空闲的机器
         return new ReturnT<String>(ReturnT.FAIL_CODE, idleBeatResultSB.toString());
     }
 
