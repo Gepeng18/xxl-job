@@ -58,8 +58,8 @@ public class JobRegistryHelper {
 
 		// for monitor
 		// 启动了一个守护的监听线程，用于监听服务心跳和绑定执行器。
-		//  30秒执行一次,维护注册表信息， 判断在线超时时间90s
-		// 其实就是从group表中读到所有的appName，然后从jobRegistry中读到所有的在线机器，然后组合起来，写会group表中
+		// 30秒执行一次,维护registry表信息， 从注册表中删除超时（90秒）的机器
+		// 其实就是从group表中读到所有的appName，然后从jobRegistry中读到所有的在线机器，然后组合起来，写回group表中
 		registryMonitorThread = new Thread(new Runnable() {
 			@Override
 			public void run() {

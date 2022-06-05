@@ -55,11 +55,15 @@ public class JobScheduleHelper {
 	public void start() {
 
 		// schedule thread
+		// 初始化一个调度线程，5秒执行一次，查询 当前时间 + 5000 毫秒，就是接下来 5 秒 《之前》 要执行的所有任务，
+		// 如果触发时间小于now，即本该以及执行的任务，则直接远程调度，如果是将来要执行的任务，则放入ringData中
+		// （放入的index为下一次执行的时间 % 60），并且更新下一次执行时间进jobInfo表中
 		scheduleThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 
 				try {
+					// 5秒执行一次
 					TimeUnit.MILLISECONDS.sleep(5000 - System.currentTimeMillis() % 1000);
 				} catch (InterruptedException e) {
 					if (!scheduleThreadToStop) {
@@ -258,6 +262,7 @@ public class JobScheduleHelper {
 
 
 		// ring thread
+		// 初始化一个时间轮线程，1秒执行一次，主要工作为：从ringData中获取最近0秒和1秒将要执行的任务，进行远程触发。
 		ringThread = new Thread(new Runnable() {
 			@Override
 			public void run() {

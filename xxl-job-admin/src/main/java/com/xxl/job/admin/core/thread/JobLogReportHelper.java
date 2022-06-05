@@ -45,7 +45,7 @@ public class JobLogReportHelper {
 
 						for (int i = 0; i < 3; i++) {
 
-							// today 分别统计今天,昨天,前天0~24点的数据
+							// 分别统计今天,昨天,前天0~24点的数据
 							Calendar itemDay = Calendar.getInstance();
 							itemDay.add(Calendar.DAY_OF_MONTH, -i);
 							itemDay.set(Calendar.HOUR_OF_DAY, 0);
@@ -84,7 +84,7 @@ public class JobLogReportHelper {
 							}
 
 							// do refresh
-							// 刷新调用次数,若找不到则默认都是0
+							// 更新logReport表调用次数,若找不到则插入表中
 							int ret = XxlJobAdminConfig.getAdminConfig().getXxlJobLogReportDao().update(xxlJobLogReport);
 							if (ret < 1) {
 								// 没数据则保存
