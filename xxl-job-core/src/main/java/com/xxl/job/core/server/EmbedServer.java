@@ -139,6 +139,18 @@ public class EmbedServer {
 
 	// ---------------------- registry ----------------------
 
+	public void startRegistry(final String appname, final String address) {
+		// start registry
+		ExecutorRegistryThread.getInstance().start(appname, address);
+	}
+
+	// ---------------------- registry ----------------------
+
+	public void stopRegistry() {
+		// stop registry
+		ExecutorRegistryThread.getInstance().toStop();
+	}
+
 	/**
 	 * netty_http
 	 * <p>
@@ -272,17 +284,5 @@ public class EmbedServer {
 				super.userEventTriggered(ctx, evt);
 			}
 		}
-	}
-
-	// ---------------------- registry ----------------------
-
-	public void startRegistry(final String appname, final String address) {
-		// start registry
-		ExecutorRegistryThread.getInstance().start(appname, address);
-	}
-
-	public void stopRegistry() {
-		// stop registry
-		ExecutorRegistryThread.getInstance().toStop();
 	}
 }

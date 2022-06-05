@@ -20,6 +20,8 @@ public class XxlJobHelper {
 
 	// ---------------------- base info ----------------------
 
+	private static Logger logger = LoggerFactory.getLogger("xxl-job logger");
+
 	/**
 	 * current JobId
 	 *
@@ -33,6 +35,8 @@ public class XxlJobHelper {
 
 		return xxlJobContext.getJobId();
 	}
+
+	// ---------------------- for log ----------------------
 
 	/**
 	 * current JobParam
@@ -48,7 +52,7 @@ public class XxlJobHelper {
 		return xxlJobContext.getJobParam();
 	}
 
-	// ---------------------- for log ----------------------
+	// ---------------------- for shard ----------------------
 
 	/**
 	 * current JobLogFileName
@@ -64,8 +68,6 @@ public class XxlJobHelper {
 		return xxlJobContext.getJobLogFileName();
 	}
 
-	// ---------------------- for shard ----------------------
-
 	/**
 	 * current ShardIndex
 	 *
@@ -80,6 +82,8 @@ public class XxlJobHelper {
 		return xxlJobContext.getShardIndex();
 	}
 
+	// ---------------------- tool for log ----------------------
+
 	/**
 	 * current ShardTotal
 	 *
@@ -93,10 +97,6 @@ public class XxlJobHelper {
 
 		return xxlJobContext.getShardTotal();
 	}
-
-	// ---------------------- tool for log ----------------------
-
-	private static Logger logger = LoggerFactory.getLogger("xxl-job logger");
 
 	/**
 	 * append log with pattern

@@ -23,16 +23,15 @@ public class JobCompleteHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobCompleteHelper.class);
 
 	private static JobCompleteHelper instance = new JobCompleteHelper();
+	private ThreadPoolExecutor callbackThreadPool = null;
+
+	// ---------------------- monitor ----------------------
+	private Thread monitorThread;
+	private volatile boolean toStop = false;
 
 	public static JobCompleteHelper getInstance() {
 		return instance;
 	}
-
-	// ---------------------- monitor ----------------------
-
-	private ThreadPoolExecutor callbackThreadPool = null;
-	private Thread monitorThread;
-	private volatile boolean toStop = false;
 
 	public void start() {
 

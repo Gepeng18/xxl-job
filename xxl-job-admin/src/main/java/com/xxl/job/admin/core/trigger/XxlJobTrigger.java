@@ -220,7 +220,7 @@ public class XxlJobTrigger {
 	 * run executor
 	 *
 	 * @param triggerParam 调用的所有参数
-	 * @param address  client的地址
+	 * @param address      client的地址
 	 * @return
 	 */
 	public static ReturnT<String> runExecutor(TriggerParam triggerParam, String address) {
@@ -228,8 +228,8 @@ public class XxlJobTrigger {
 		try {
 			// 获取业务执行器地址,就执行器地址后面拼接token
 			ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(address);
-            // 这里是Server，Server调用的是 ExecutorBizClient.run()
-            // client端执行的是 ExecutorBizImpl.run()
+			// 这里是Server，Server调用的是 ExecutorBizClient.run()
+			// client端执行的是 ExecutorBizImpl.run()
 			runResult = executorBiz.run(triggerParam);
 		} catch (Exception e) {
 			logger.error(">>>>>>>>>>> xxl-job trigger error, please check if the executor[{}] is running.", address, e);

@@ -21,13 +21,12 @@ public class JobLogFileCleanThread {
 	private static Logger logger = LoggerFactory.getLogger(JobLogFileCleanThread.class);
 
 	private static JobLogFileCleanThread instance = new JobLogFileCleanThread();
+	private Thread localThread;
+	private volatile boolean toStop = false;
 
 	public static JobLogFileCleanThread getInstance() {
 		return instance;
 	}
-
-	private Thread localThread;
-	private volatile boolean toStop = false;
 
 	public void start(final long logRetentionDays) {
 

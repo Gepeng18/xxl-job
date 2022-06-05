@@ -27,7 +27,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class XxlJobExecutor {
 	private static final Logger logger = LoggerFactory.getLogger(XxlJobExecutor.class);
-
+	// ---------------------- admin-client (rpc invoker) ----------------------
+	private static List<AdminBiz> adminBizList;
+	// ---------------------- job handler repository ----------------------
+	private static ConcurrentMap<String, IJobHandler> jobHandlerRepository = new ConcurrentHashMap<String, IJobHandler>();
+	// ---------------------- job thread repository ----------------------
+	private static ConcurrentMap<Integer, JobThread> jobThreadRepository = new ConcurrentHashMap<Integer, JobThread>();
 	// ---------------------- param ----------------------
 	private String adminAddresses;
 	private String accessToken;
@@ -37,6 +42,51 @@ public class XxlJobExecutor {
 	private int port;
 	private String logPath;
 	private int logRetentionDays;
+	// ---------------------- executor-server (rpc provider) ----------------------
+	private EmbedServer embedServer = null;
+
+	public static List<AdminBiz> getAdminBizList() {
+		return adminBizList;
+	}
+
+	public static IJobHandler loadJobHandler(String name) {
+		return jobHandlerRepository.get(name);
+	}
+
+	public static IJobHandler registJobHandler(String name, IJobHandler jobHandler) {
+		logger.info(">>>>>>>>>>> xxl-job register jobhandler success, name:{}, jobHandler:{}", name, jobHandler);
+		return jobHandlerRepository.put(name, jobHandler);
+	}
+
+	public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason) {
+		JobThread newJobThread = new JobThread(jobId, handler);
+		newJobThread.start();
+		logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});
+		// 存储jobId与绑定工作的线程
+		JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);    // putIfAbsent | oh my god, map's put method return the old value!!!
+		if (oldJobThread != null) {
+			// 中断并删除旧线程
+			oldJobThread.toStop(removeOldReason);
+			oldJobThread.interrupt();
+		}
+
+		return newJobThread;
+	}
+
+	public static JobThread removeJobThread(int jobId, String removeOldReason) {
+		JobThread oldJobThread = jobThreadRepository.remove(jobId);
+		if (oldJobThread != null) {
+			oldJobThread.toStop(removeOldReason);
+			oldJobThread.interrupt();
+
+			return oldJobThread;
+		}
+		return null;
+	}
+
+	public static JobThread loadJobThread(int jobId) {
+		return jobThreadRepository.get(jobId);
+	}
 
 	public void setAdminAddresses(String adminAddresses) {
 		this.adminAddresses = adminAddresses;
@@ -69,7 +119,6 @@ public class XxlJobExecutor {
 	public void setLogRetentionDays(int logRetentionDays) {
 		this.logRetentionDays = logRetentionDays;
 	}
-
 
 	// ---------------------- start + stop ----------------------
 	public void start() throws Exception {
@@ -126,10 +175,6 @@ public class XxlJobExecutor {
 
 	}
 
-
-	// ---------------------- admin-client (rpc invoker) ----------------------
-	private static List<AdminBiz> adminBizList;
-
 	// 当存在多个任务调度中心时，创建多个AdminBizClient(adminAddress)
 	private void initAdminBizList(String adminAddresses, String accessToken) throws Exception {
 		if (adminAddresses != null && adminAddresses.trim().length() > 0) {
@@ -148,13 +193,6 @@ public class XxlJobExecutor {
 		}
 	}
 
-	public static List<AdminBiz> getAdminBizList() {
-		return adminBizList;
-	}
-
-	// ---------------------- executor-server (rpc provider) ----------------------
-	private EmbedServer embedServer = null;
-
 	/**
 	 * 1. 使用netty开放端口，等待服务端调用
 	 * 2. 注册到服务端(心跳30S)
@@ -165,11 +203,11 @@ public class XxlJobExecutor {
 		// fill ip port
 		// 选择可用端口号，从9999向下找到未使用过的端口
 		port = port > 0 ? port : NetUtil.findAvailablePort(9999);
-        // 获得本机内网ip地址
+		// 获得本机内网ip地址
 		ip = (ip != null && ip.trim().length() > 0) ? ip : IpUtil.getIp();
 
 		// generate address
-        // 拼接应用请求地址
+		// 拼接应用请求地址
 		if (address == null || address.trim().length() == 0) {
 			String ip_port_address = IpUtil.getIpPort(ip, port);   // registry-address：default use address to registry , otherwise use ip:port if address is null
 			address = "http://{ip_port}/".replace("{ip_port}", ip_port_address);
@@ -181,7 +219,7 @@ public class XxlJobExecutor {
 		}
 
 		// start
-        // 创建server实例并启动,启动嵌入服务器 ,向服务端注册,以及监听端口,主要服务服务端调用。
+		// 创建server实例并启动,启动嵌入服务器 ,向服务端注册,以及监听端口,主要服务服务端调用。
 		embedServer = new EmbedServer();
 		embedServer.start(address, port, appname, accessToken);
 	}
@@ -195,19 +233,6 @@ public class XxlJobExecutor {
 				logger.error(e.getMessage(), e);
 			}
 		}
-	}
-
-
-	// ---------------------- job handler repository ----------------------
-	private static ConcurrentMap<String, IJobHandler> jobHandlerRepository = new ConcurrentHashMap<String, IJobHandler>();
-
-	public static IJobHandler loadJobHandler(String name) {
-		return jobHandlerRepository.get(name);
-	}
-
-	public static IJobHandler registJobHandler(String name, IJobHandler jobHandler) {
-		logger.info(">>>>>>>>>>> xxl-job register jobhandler success, name:{}, jobHandler:{}", name, jobHandler);
-		return jobHandlerRepository.put(name, jobHandler);
 	}
 
 	protected void registJobHandler(XxlJob xxlJob, Object bean, Method executeMethod) {
@@ -262,39 +287,5 @@ public class XxlJobExecutor {
 		// registry jobhandler
 		registJobHandler(name, new MethodJobHandler(bean, executeMethod, initMethod, destroyMethod));
 
-	}
-
-
-	// ---------------------- job thread repository ----------------------
-	private static ConcurrentMap<Integer, JobThread> jobThreadRepository = new ConcurrentHashMap<Integer, JobThread>();
-
-	public static JobThread registJobThread(int jobId, IJobHandler handler, String removeOldReason) {
-		JobThread newJobThread = new JobThread(jobId, handler);
-		newJobThread.start();
-		logger.info(">>>>>>>>>>> xxl-job regist JobThread success, jobId:{}, handler:{}", new Object[]{jobId, handler});
-		// 存储jobId与绑定工作的线程
-		JobThread oldJobThread = jobThreadRepository.put(jobId, newJobThread);    // putIfAbsent | oh my god, map's put method return the old value!!!
-		if (oldJobThread != null) {
-			// 中断并删除旧线程
-			oldJobThread.toStop(removeOldReason);
-			oldJobThread.interrupt();
-		}
-
-		return newJobThread;
-	}
-
-	public static JobThread removeJobThread(int jobId, String removeOldReason) {
-		JobThread oldJobThread = jobThreadRepository.remove(jobId);
-		if (oldJobThread != null) {
-			oldJobThread.toStop(removeOldReason);
-			oldJobThread.interrupt();
-
-			return oldJobThread;
-		}
-		return null;
-	}
-
-	public static JobThread loadJobThread(int jobId) {
-		return jobThreadRepository.get(jobId);
 	}
 }

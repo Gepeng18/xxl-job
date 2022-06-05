@@ -17,18 +17,17 @@ public class ExecutorRegistryThread {
 	private static Logger logger = LoggerFactory.getLogger(ExecutorRegistryThread.class);
 
 	private static ExecutorRegistryThread instance = new ExecutorRegistryThread();
+	private Thread registryThread;
+	private volatile boolean toStop = false;
 
 	public static ExecutorRegistryThread getInstance() {
 		return instance;
 	}
 
-	private Thread registryThread;
-	private volatile boolean toStop = false;
-
-    /**
-     * 以上代码为服务注册，也是心跳机制（api/registry），当服务停止后stop变量会变为true，这时会通知服务端下线（api/registryRemove），
-     * 如果服务突然宕机也没有关系，服务端有循环检查机制，当长时间没有收到客户端的心跳，会自动下线。
-     */
+	/**
+	 * 以上代码为服务注册，也是心跳机制（api/registry），当服务停止后stop变量会变为true，这时会通知服务端下线（api/registryRemove），
+	 * 如果服务突然宕机也没有关系，服务端有循环检查机制，当长时间没有收到客户端的心跳，会自动下线。
+	 */
 	public void start(final String appname, final String address) {
 
 		// valid，appname不允许为null

@@ -58,7 +58,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
 
 		// valid：jobHandler + jobThread
 		GlueTypeEnum glueTypeEnum = GlueTypeEnum.match(triggerParam.getGlueType());
-        // do bean模式触发
+		// do bean模式触发
 		if (GlueTypeEnum.BEAN == glueTypeEnum) {
 
 			// new jobhandler （从jobHandlerRepository中拿）
@@ -82,7 +82,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
 			}
 
 		} else if (GlueTypeEnum.GLUE_GROOVY == glueTypeEnum) {
-            // 原生模式触发
+			// 原生模式触发
 			// valid old jobThread
 			if (jobThread != null &&
 					!(jobThread.getHandler() instanceof GlueJobHandler
@@ -105,7 +105,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
 				}
 			}
 		} else if (glueTypeEnum != null && glueTypeEnum.isScript()) {
-            // 脚本触发
+			// 脚本触发
 			// valid old jobThread
 			if (jobThread != null &&
 					!(jobThread.getHandler() instanceof ScriptJobHandler
@@ -126,7 +126,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
 		}
 
 		// executor block strategy
-        // 阻塞处理策略
+		// 阻塞处理策略
 		if (jobThread != null) {
 			ExecutorBlockStrategyEnum blockStrategy = ExecutorBlockStrategyEnum.match(triggerParam.getExecutorBlockStrategy(), null);
 			// 丢弃后续调度:调度请求进入单机执行器后,发现执行器存在运行的调度任务,本次请求将会被丢弃并标记为失败;
@@ -151,12 +151,12 @@ public class ExecutorBizImpl implements ExecutorBiz {
 
 		// replace thread (new or exists invalid)
 		if (jobThread == null) {
-            // 创建执行控制器
+			// 创建执行控制器
 			jobThread = XxlJobExecutor.registJobThread(triggerParam.getJobId(), jobHandler, removeOldReason);
 		}
 
 		// do push data to queue
-        // 将数据放入执行队列
+		// 将数据放入执行队列
 		// 作业没绑定过线程,则绑定作业到具体线程,并且启动
 		ReturnT<String> pushResult = jobThread.pushTriggerQueue(triggerParam);
 		return pushResult;

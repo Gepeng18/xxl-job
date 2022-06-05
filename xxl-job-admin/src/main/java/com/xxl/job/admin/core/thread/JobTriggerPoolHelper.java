@@ -19,10 +19,37 @@ public class JobTriggerPoolHelper {
 
 
 	// ---------------------- trigger pool ----------------------
-
+	private static JobTriggerPoolHelper helper = new JobTriggerPoolHelper();
 	// fast/slow thread pool
 	private ThreadPoolExecutor fastTriggerPool = null;
 	private ThreadPoolExecutor slowTriggerPool = null;
+	// job timeout count
+	private volatile long minTim = System.currentTimeMillis() / 60000;     // ms > min
+	private volatile ConcurrentMap<Integer, AtomicInteger> jobTimeoutCountMap = new ConcurrentHashMap<>();
+
+	public static void toStart() {
+		helper.start();
+	}
+
+	public static void toStop() {
+		helper.stop();
+	}
+
+
+	// ---------------------- helper ----------------------
+
+	/**
+	 * @param jobId
+	 * @param triggerType
+	 * @param failRetryCount        >=0: use this param
+	 *                              <0: use param from job info config
+	 * @param executorShardingParam
+	 * @param executorParam         null: use job param
+	 *                              not null: cover job param
+	 */
+	public static void trigger(int jobId, TriggerTypeEnum triggerType, int failRetryCount, String executorShardingParam, String executorParam, String addressList) {
+		helper.addTrigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
+	}
 
 	/**
 	 * 这里分别初始化了2个线程池，一个快一个慢，优先选择快，当一分钟以内任务超过10次执行时间超过500ms，则加入慢线程池执行。
@@ -58,19 +85,12 @@ public class JobTriggerPoolHelper {
 				});
 	}
 
-
 	public void stop() {
 		//triggerPool.shutdown();
 		fastTriggerPool.shutdownNow();
 		slowTriggerPool.shutdownNow();
 		logger.info(">>>>>>>>> xxl-job trigger thread pool shutdown success.");
 	}
-
-
-	// job timeout count
-	private volatile long minTim = System.currentTimeMillis() / 60000;     // ms > min
-	private volatile ConcurrentMap<Integer, AtomicInteger> jobTimeoutCountMap = new ConcurrentHashMap<>();
-
 
 	/**
 	 * add trigger
@@ -88,13 +108,13 @@ public class JobTriggerPoolHelper {
 		// 默认使用fastTriggerPool
 		ThreadPoolExecutor triggerPool_ = fastTriggerPool;
 		AtomicInteger jobTimeoutCount = jobTimeoutCountMap.get(jobId);
-        // 如果发现任务一分钟内有大于10次的慢执行，换slowTriggerPool线程池
+		// 如果发现任务一分钟内有大于10次的慢执行，换slowTriggerPool线程池
 		if (jobTimeoutCount != null && jobTimeoutCount.get() > 10) {      // job-timeout 10 times in 1 min
 			triggerPool_ = slowTriggerPool;
 		}
 
 		// trigger
-        // 线程池执行
+		// 线程池执行
 		triggerPool_.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -102,14 +122,14 @@ public class JobTriggerPoolHelper {
 
 				try {
 					// do trigger
-                    // 触发
-                    XxlJobTrigger.trigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
+					// 触发
+					XxlJobTrigger.trigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				} finally {
 
 					// check timeout-count-map
-                    // 到达下一个周期则清理上一个周期数据
+					// 到达下一个周期则清理上一个周期数据
 					long minTim_now = System.currentTimeMillis() / 60000;
 					if (minTim != minTim_now) {
 						minTim = minTim_now;
@@ -117,7 +137,7 @@ public class JobTriggerPoolHelper {
 					}
 
 					// incr timeout-count-map
-                    // 记录慢任务执行次数
+					// 记录慢任务执行次数
 					long cost = System.currentTimeMillis() - start;
 					if (cost > 500) {       // ob-timeout threshold 500ms
 						AtomicInteger timeoutCount = jobTimeoutCountMap.putIfAbsent(jobId, new AtomicInteger(1));
@@ -130,32 +150,6 @@ public class JobTriggerPoolHelper {
 
 			}
 		});
-	}
-
-
-	// ---------------------- helper ----------------------
-
-	private static JobTriggerPoolHelper helper = new JobTriggerPoolHelper();
-
-	public static void toStart() {
-		helper.start();
-	}
-
-	public static void toStop() {
-		helper.stop();
-	}
-
-	/**
-	 * @param jobId
-	 * @param triggerType
-	 * @param failRetryCount        >=0: use this param
-	 *                              <0: use param from job info config
-	 * @param executorShardingParam
-	 * @param executorParam         null: use job param
-	 *                              not null: cover job param
-	 */
-	public static void trigger(int jobId, TriggerTypeEnum triggerType, int failRetryCount, String executorShardingParam, String executorParam, String addressList) {
-		helper.addTrigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
 	}
 
 }

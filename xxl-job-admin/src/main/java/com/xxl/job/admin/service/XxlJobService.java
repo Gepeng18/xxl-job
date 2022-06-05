@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * core job action for xxl-job
- * 
+ *
  * @author xuxueli 2016-5-28 15:30:33
  */
 public interface XxlJobService {
@@ -45,7 +45,8 @@ public interface XxlJobService {
 
 	/**
 	 * remove job
-	 * 	 *
+	 * *
+	 *
 	 * @param id
 	 * @return
 	 */
@@ -72,7 +73,7 @@ public interface XxlJobService {
 	 *
 	 * @return
 	 */
-	public Map<String,Object> dashboardInfo();
+	public Map<String, Object> dashboardInfo();
 
 	/**
 	 * chart info
@@ -81,6 +82,6 @@ public interface XxlJobService {
 	 * @param endDate
 	 * @return
 	 */
-	public ReturnT<Map<String,Object>> chartInfo(Date startDate, Date endDate);
+	public ReturnT<Map<String, Object>> chartInfo(Date startDate, Date endDate);
 
 }

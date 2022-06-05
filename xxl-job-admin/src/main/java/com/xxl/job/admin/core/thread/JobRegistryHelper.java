@@ -22,14 +22,13 @@ public class JobRegistryHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobRegistryHelper.class);
 
 	private static JobRegistryHelper instance = new JobRegistryHelper();
+	private ThreadPoolExecutor registryOrRemoveThreadPool = null;
+	private Thread registryMonitorThread;
+	private volatile boolean toStop = false;
 
 	public static JobRegistryHelper getInstance() {
 		return instance;
 	}
-
-	private ThreadPoolExecutor registryOrRemoveThreadPool = null;
-	private Thread registryMonitorThread;
-	private volatile boolean toStop = false;
 
 	public void start() {
 
@@ -174,10 +173,10 @@ public class JobRegistryHelper {
 		registryOrRemoveThreadPool.execute(new Runnable() {
 			@Override
 			public void run() {
-				// 更新注册表的心跳时间（根据group,key,value）
+				// 更新registryDao注册表的心跳时间（根据group,key,value）
 				int ret = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().registryUpdate(registryParam.getRegistryGroup(), registryParam.getRegistryKey(), registryParam.getRegistryValue(), new Date());
 				if (ret < 1) {
-					// 更新失败说明不存在该数据，存入注册表
+					// 更新失败说明不存在该数据，存入registryDao注册表
 					XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().registrySave(registryParam.getRegistryGroup(), registryParam.getRegistryKey(), registryParam.getRegistryValue(), new Date());
 
 					// fresh
@@ -204,7 +203,7 @@ public class JobRegistryHelper {
 		registryOrRemoveThreadPool.execute(new Runnable() {
 			@Override
 			public void run() {
-				// 移除注册表数据
+				// 移除registryDao注册表数据
 				int ret = XxlJobAdminConfig.getAdminConfig().getXxlJobRegistryDao().registryDelete(registryParam.getRegistryGroup(), registryParam.getRegistryKey(), registryParam.getRegistryValue());
 				if (ret > 0) {
 					// fresh

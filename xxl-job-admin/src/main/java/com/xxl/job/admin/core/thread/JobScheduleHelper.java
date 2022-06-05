@@ -20,24 +20,37 @@ import java.util.concurrent.TimeUnit;
  * @author xuxueli 2019-05-21
  */
 public class JobScheduleHelper {
-	private static Logger logger = LoggerFactory.getLogger(JobScheduleHelper.class);
-
-	private static JobScheduleHelper instance = new JobScheduleHelper();
-
-	public static JobScheduleHelper getInstance() {
-		return instance;
-	}
-
 	// 任务间隔大小
 	public static final long PRE_READ_MS = 5000;    // pre read
-
+	private static Logger logger = LoggerFactory.getLogger(JobScheduleHelper.class);
+	private static JobScheduleHelper instance = new JobScheduleHelper();
+	// 时间轮，key 0-59，value 任务ID列表，两个线程同时处理这个对象
+	private volatile static Map<Integer, List<Integer>> ringData = new ConcurrentHashMap<>();
 	private Thread scheduleThread;
 	private Thread ringThread;
 	private volatile boolean scheduleThreadToStop = false;
 	private volatile boolean ringThreadToStop = false;
 
-	// 时间轮，key 0-59，value 任务ID列表，两个线程同时处理这个对象
-	private volatile static Map<Integer, List<Integer>> ringData = new ConcurrentHashMap<>();
+	public static JobScheduleHelper getInstance() {
+		return instance;
+	}
+
+	// ---------------------- tools ----------------------
+	public static Date generateNextValidTime(XxlJobInfo jobInfo, Date fromTime) throws Exception {
+		//匹配调度类型
+		ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.match(jobInfo.getScheduleType(), null);
+		if (ScheduleTypeEnum.CRON == scheduleTypeEnum) {
+			//通过CRON，触发任务调度；
+			//通过cron表达式,获取下一次执行时间
+			Date nextValidTime = new CronExpression(jobInfo.getScheduleConf()).getNextValidTimeAfter(fromTime);
+			return nextValidTime;
+		} else if (ScheduleTypeEnum.FIX_RATE == scheduleTypeEnum /*|| ScheduleTypeEnum.FIX_DELAY == scheduleTypeEnum*/) {
+			//以固定速度，触发任务调度；按照固定的间隔时间，周期性触发；
+			return new Date(fromTime.getTime() + Integer.valueOf(jobInfo.getScheduleConf()) * 1000);
+		}
+		//没有匹配到调度类型,则null
+		return null;
+	}
 
 	public void start() {
 
@@ -252,8 +265,8 @@ public class JobScheduleHelper {
 				while (!ringThreadToStop) {
 
 					// align second
-                    // 时间对齐，对齐至秒
-                    try {
+					// 时间对齐，对齐至秒
+					try {
 						TimeUnit.MILLISECONDS.sleep(1000 - System.currentTimeMillis() % 1000);
 					} catch (InterruptedException e) {
 						if (!ringThreadToStop) {
@@ -263,7 +276,7 @@ public class JobScheduleHelper {
 
 					try {
 						// second data
-                        // 时间轮数据处理
+						// 时间轮数据处理
 						List<Integer> ringItemData = new ArrayList<>();
 						int nowSecond = Calendar.getInstance().get(Calendar.SECOND);   // 避免处理耗时太长，跨过刻度，向前校验一个刻度；
 						// 获取前1秒和2秒要执行到任务
@@ -383,24 +396,6 @@ public class JobScheduleHelper {
 		}
 
 		logger.info(">>>>>>>>>>> xxl-job, JobScheduleHelper stop");
-	}
-
-
-	// ---------------------- tools ----------------------
-	public static Date generateNextValidTime(XxlJobInfo jobInfo, Date fromTime) throws Exception {
-		//匹配调度类型
-		ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.match(jobInfo.getScheduleType(), null);
-		if (ScheduleTypeEnum.CRON == scheduleTypeEnum) {
-			//通过CRON，触发任务调度；
-			//通过cron表达式,获取下一次执行时间
-			Date nextValidTime = new CronExpression(jobInfo.getScheduleConf()).getNextValidTimeAfter(fromTime);
-			return nextValidTime;
-		} else if (ScheduleTypeEnum.FIX_RATE == scheduleTypeEnum /*|| ScheduleTypeEnum.FIX_DELAY == scheduleTypeEnum*/) {
-			//以固定速度，触发任务调度；按照固定的间隔时间，周期性触发；
-			return new Date(fromTime.getTime() + Integer.valueOf(jobInfo.getScheduleConf())*1000 );
-		}
-		//没有匹配到调度类型,则null
-		return null;
 	}
 
 }

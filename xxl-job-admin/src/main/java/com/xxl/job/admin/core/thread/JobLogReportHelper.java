@@ -20,14 +20,12 @@ public class JobLogReportHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobLogReportHelper.class);
 
 	private static JobLogReportHelper instance = new JobLogReportHelper();
+	private Thread logrThread;
+	private volatile boolean toStop = false;
 
 	public static JobLogReportHelper getInstance() {
 		return instance;
 	}
-
-
-	private Thread logrThread;
-	private volatile boolean toStop = false;
 
 	public void start() {
 		logrThread = new Thread(new Runnable() {

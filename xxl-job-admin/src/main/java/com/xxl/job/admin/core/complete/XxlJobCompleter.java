@@ -21,8 +21,8 @@ public class XxlJobCompleter {
 
 	/**
 	 * common fresh handle entrance (limit only once)
-     * 如果父任务执行成功了，就触发子任务的执行
-     * 然后对日志进行修改后入库
+	 * 如果父任务执行成功了，就触发子任务的执行
+	 * 然后对日志进行修改后入库
 	 *
 	 * @param xxlJobLog
 	 * @return
@@ -45,7 +45,7 @@ public class XxlJobCompleter {
 
 	/**
 	 * do somethind to finish job
-     * 如果父任务执行成功了，就触发子任务的执行
+	 * 如果父任务执行成功了，就触发子任务的执行
 	 */
 	private static void finishJob(XxlJobLog xxlJobLog) {
 

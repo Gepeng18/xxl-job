@@ -6,51 +6,49 @@ import java.io.Serializable;
  * Created by xuxueli on 17/3/23.
  */
 public class LogResult implements Serializable {
-    private static final long serialVersionUID = 42L;
+	private static final long serialVersionUID = 42L;
+	private int fromLineNum;
+	private int toLineNum;
+	private String logContent;
+	private boolean isEnd;
+	public LogResult() {
+	}
+	public LogResult(int fromLineNum, int toLineNum, String logContent, boolean isEnd) {
+		this.fromLineNum = fromLineNum;
+		this.toLineNum = toLineNum;
+		this.logContent = logContent;
+		this.isEnd = isEnd;
+	}
 
-    public LogResult() {
-    }
-    public LogResult(int fromLineNum, int toLineNum, String logContent, boolean isEnd) {
-        this.fromLineNum = fromLineNum;
-        this.toLineNum = toLineNum;
-        this.logContent = logContent;
-        this.isEnd = isEnd;
-    }
+	public int getFromLineNum() {
+		return fromLineNum;
+	}
 
-    private int fromLineNum;
-    private int toLineNum;
-    private String logContent;
-    private boolean isEnd;
+	public void setFromLineNum(int fromLineNum) {
+		this.fromLineNum = fromLineNum;
+	}
 
-    public int getFromLineNum() {
-        return fromLineNum;
-    }
+	public int getToLineNum() {
+		return toLineNum;
+	}
 
-    public void setFromLineNum(int fromLineNum) {
-        this.fromLineNum = fromLineNum;
-    }
+	public void setToLineNum(int toLineNum) {
+		this.toLineNum = toLineNum;
+	}
 
-    public int getToLineNum() {
-        return toLineNum;
-    }
+	public String getLogContent() {
+		return logContent;
+	}
 
-    public void setToLineNum(int toLineNum) {
-        this.toLineNum = toLineNum;
-    }
+	public void setLogContent(String logContent) {
+		this.logContent = logContent;
+	}
 
-    public String getLogContent() {
-        return logContent;
-    }
+	public boolean isEnd() {
+		return isEnd;
+	}
 
-    public void setLogContent(String logContent) {
-        this.logContent = logContent;
-    }
-
-    public boolean isEnd() {
-        return isEnd;
-    }
-
-    public void setEnd(boolean end) {
-        isEnd = end;
-    }
+	public void setEnd(boolean end) {
+		isEnd = end;
+	}
 }

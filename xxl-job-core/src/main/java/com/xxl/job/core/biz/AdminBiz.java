@@ -12,37 +12,37 @@ import java.util.List;
 public interface AdminBiz {
 
 
-    // ---------------------- callback ----------------------
+	// ---------------------- callback ----------------------
 
-    /**
-     * callback
-     *
-     * @param callbackParamList
-     * @return
-     */
-    public ReturnT<String> callback(List<HandleCallbackParam> callbackParamList);
-
-
-    // ---------------------- registry ----------------------
-
-    /**
-     * registry
-     *
-     * @param registryParam
-     * @return
-     */
-    public ReturnT<String> registry(RegistryParam registryParam);
-
-    /**
-     * registry remove
-     *
-     * @param registryParam
-     * @return
-     */
-    public ReturnT<String> registryRemove(RegistryParam registryParam);
+	/**
+	 * callback
+	 *
+	 * @param callbackParamList
+	 * @return
+	 */
+	public ReturnT<String> callback(List<HandleCallbackParam> callbackParamList);
 
 
-    // ---------------------- biz (custome) ----------------------
-    // group、job ... manage
+	// ---------------------- registry ----------------------
+
+	/**
+	 * registry
+	 *
+	 * @param registryParam
+	 * @return
+	 */
+	public ReturnT<String> registry(RegistryParam registryParam);
+
+	/**
+	 * registry remove
+	 *
+	 * @param registryParam
+	 * @return
+	 */
+	public ReturnT<String> registryRemove(RegistryParam registryParam);
+
+
+	// ---------------------- biz (custome) ----------------------
+	// group、job ... manage
 
 }

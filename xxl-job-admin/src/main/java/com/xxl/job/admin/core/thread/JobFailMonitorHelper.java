@@ -20,15 +20,14 @@ public class JobFailMonitorHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobFailMonitorHelper.class);
 
 	private static JobFailMonitorHelper instance = new JobFailMonitorHelper();
+	private Thread monitorThread;
+
+	// ---------------------- monitor ----------------------
+	private volatile boolean toStop = false;
 
 	public static JobFailMonitorHelper getInstance() {
 		return instance;
 	}
-
-	// ---------------------- monitor ----------------------
-
-	private Thread monitorThread;
-	private volatile boolean toStop = false;
 
 	/**
 	 * 检测失败日志，然后根据失败日志的jobId重新执行触发器，然后根据执行结果更新日志
